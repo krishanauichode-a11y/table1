@@ -155,6 +155,7 @@
         border: 1px solid var(--gray-200);
         position: relative;
         overflow: hidden;
+        margin-top: 90px;
       }
 
       .action-bar::before {
@@ -852,9 +853,52 @@ justify-content: center;
       .month-year-select .select-modern {
         flex: 1;
       }
+      /* ================= BATCH ADDITION ================= */
+      .batch-addition-container {
+        background: var(--gray-50);
+        border-radius: var(--radius-sm);
+        padding: 16px;
+        margin-bottom: 20px;
+        border: 1px solid var(--gray-200);
+      }
+      .batch-addition-title {
+        font-weight: 600;
+        color: var(--gray-700);
+        margin-bottom: 10px;
+        font-size: 16px;
+      }
+      .batch-addition-form {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .batch-name-input {
+        flex: 1;
+        min-width: 200px;
+      }
+      .batch-month-select {
+        min-width: 150px;
+      }
     </style>
   </head>
   <body>
+<nav class="navbar navbar-expand-lg bg-body-tertiary py-3 fixed-top">
+    <div class="container justify-content-center">
+
+        <!-- Mobile Logo -->
+        <a class="navbar-brand d-block d-md-none text-center" href="#">
+            <img src="image/logo.png" alt="Logo" class="img-fluid" style="max-width:150px;">
+        </a>
+
+        <!-- Desktop Logo -->
+        <a class="navbar-brand d-none d-md-block text-center" href="#">
+            <img src="image/logo.png" alt="Logo" class="img-fluid" style="max-width:300px;">
+        </a>
+
+    </div>
+</nav>
+
     <div class="loading-overlay" id="loadingOverlay" style="display: none">
       <div class="spinner-modern"></div>
     </div>
@@ -923,6 +967,29 @@ justify-content: center;
                         <button class="btn btn-sm btn-light ms-auto" onclick="downloadTableAsPDF('summaryBody', 'webinar-summary.pdf')"><i class="bi bi-download"></i> PDF</button>
                     </div>
                     <div class="card-body-custom">
+                        <div class="batch-addition-container">
+                            <div class="batch-addition-title">Add New Batch</div>
+                            <div class="batch-addition-form">
+                                <input type="text" id="newBatchName" class="form-control-modern batch-name-input" placeholder="Enter batch name (e.g., 15 June)">
+                                <select id="newBatchMonth" class="select-modern batch-month-select">
+                                    <option value="0">January</option>
+                                    <option value="1">February</option>
+                                    <option value="2">March</option>
+                                    <option value="3">April</option>
+                                    <option value="4">May</option>
+                                    <option value="5">June</option>
+                                    <option value="6">July</option>
+                                    <option value="7">August</option>
+                                    <option value="8">September</option>
+                                    <option value="9">October</option>
+                                    <option value="10">November</option>
+                                    <option value="11">December</option>
+                                </select>
+                                <button class="btn-modern btn-primary-modern batch-btn" onclick="addNewBatch()">
+                                    <i class="bi bi-plus-circle"></i> Add Batch
+                                </button>
+                            </div>
+                        </div>
                         <div class="batch-selection-container">
                           <div class="row">
                             <div class="col-12 col-md-12 col-lg-12">
@@ -1065,7 +1132,7 @@ justify-content: center;
       // PERFECT LOGIC: Batch to Month Mapping
       // This array defines the mapping between batch index and month index
       // You can easily add more batches here in the future
-      const batchToMonthMapping = [
+      let batchToMonthMapping = [
         { batchIndex: 0, batchName: "8 March", monthIndex: 2, monthName: "March" },
         { batchIndex: 1, batchName: "6 April", monthIndex: 3, monthName: "April" },
         { batchIndex: 2, batchName: "10 May", monthIndex: 4, monthName: "May" }
@@ -1133,6 +1200,11 @@ justify-content: center;
           
           employeeBatches = data.employeeBatches || {};
           
+          // Load batchToMonthMapping from data if available
+          if (data.batchToMonthMapping) {
+            batchToMonthMapping = data.batchToMonthMapping;
+          }
+          
           salesData.employees.forEach(emp => {
             if (!salesData.leadSummary[emp]) {
               salesData.leadSummary[emp] = {};
@@ -1145,6 +1217,7 @@ justify-content: center;
           renderAll();
           renderWebinarPieChart();
           renderWebinarBarChart();
+          updateBatchDropdown();
         } catch (error) {
           console.error("Error fetching data:", error);
           showNotification("Failed to load data.", "error");
@@ -1165,7 +1238,7 @@ justify-content: center;
               leadSummary: salesData.leadSummary, monthlyLeads: salesData.monthlyLeads,
               batchData: batchData, monthlyBatchAdmin: monthlyBatchAdminObject,
               customHeaders: customHeaders, webinarLeads: webinarMonthlyLeads,
-              employeeBatches: employeeBatches
+              employeeBatches: employeeBatches, batchToMonthMapping: batchToMonthMapping
             }),
           });
           if (response.ok) { showNotification("Data saved successfully!", "success"); } else { throw new Error("Failed to save data"); }
@@ -1233,6 +1306,61 @@ justify-content: center;
           console.error("Error adding employee:", error);
           showNotification("Failed to add employee. Please try again.", "error");
         } finally { hideLoading(); }
+      }
+
+      // --- BATCH MANAGEMENT FUNCTIONS ---
+      function addNewBatch() {
+        const batchName = document.getElementById("newBatchName").value.trim();
+        const monthIndex = parseInt(document.getElementById("newBatchMonth").value);
+        const monthNames = ["January", "February", "March", "April", "May", "June", 
+                           "July", "August", "September", "October", "November", "December"];
+        
+        if (!batchName) {
+          showNotification("Please enter a batch name", "warning");
+          return;
+        }
+        
+        // Check if batch name already exists
+        if (batchToMonthMapping.some(batch => batch.batchName === batchName)) {
+          showNotification("Batch with this name already exists", "warning");
+          return;
+        }
+        
+        // Add new batch to mapping
+        const newBatch = {
+          batchIndex: batchToMonthMapping.length,
+          batchName: batchName,
+          monthIndex: monthIndex,
+          monthName: monthNames[monthIndex]
+        };
+        
+        batchToMonthMapping.push(newBatch);
+        
+        // Clear input fields
+        document.getElementById("newBatchName").value = "";
+        document.getElementById("newBatchMonth").value = "0";
+        
+        // Update UI
+        updateBatchDropdown();
+        
+        showNotification(`Batch "${batchName}" added successfully!`, "success");
+      }
+      
+      function updateBatchDropdown() {
+        const dropdown = document.getElementById("summaryBatchSelect");
+        dropdown.innerHTML = "";
+        
+        batchToMonthMapping.forEach(batch => {
+          const option = document.createElement("option");
+          option.value = batch.batchIndex;
+          option.textContent = batch.batchName;
+          dropdown.appendChild(option);
+        });
+        
+        // Set current selection if available
+        if (currentSummaryMonth !== null && currentSummaryMonth < batchToMonthMapping.length) {
+          dropdown.value = currentSummaryMonth;
+        }
       }
 
       // --- RENDER FUNCTIONS ---
@@ -1878,6 +2006,31 @@ justify-content: center;
         
         fetchData();
       });
+
+      
+  // --- INITIALIZE ---
+      document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("summaryBatchSelect").value = currentSummaryMonth;
+        document.getElementById("monthlyMonthSelect").value = currentMonthlyMonth;
+        document.getElementById("webinarYearSelect").value = currentWebinarYear;
+        document.getElementById("currentYearBadge").textContent = currentWebinarYear;
+        
+        fetchData();
+      });
+
+      document.addEventListener("DOMContentLoaded", function () {
+  const carousel = document.getElementById("salesCarousel");
+  const indicators = document.querySelectorAll(".indicator-dot");
+
+  carousel.addEventListener("slide.bs.carousel", function (event) {
+    // Remove active from all
+    indicators.forEach(dot => dot.classList.remove("active"));
+
+    // Add active to current slide index
+    indicators[event.to].classList.add("active");
+  });
+});
+
     </script>
   </body>
 </html>
