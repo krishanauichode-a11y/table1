@@ -1958,34 +1958,46 @@
 
         
         summaryFooter.innerHTML = ""; 
-        let totalRow = `<tr><td class="name-cell">TOTAL</td>`; 
-        let grandTotal = 0;
-        let grandAttended = 0;
-        
-        ["pre", "off", "rep", "app"].forEach((key) => {
-          let columnTotal = 0; 
-          employeesToShow.forEach((emp) => { 
-            columnTotal += Number(salesData.leadSummary[emp][currentSummaryMonth][key] || 0); 
-          });
-          grandTotal += columnTotal; 
-          totalRow += `<td class="total-cell">${columnTotal}</td>`;
-        });
-        
-        // Calculate total attended
-        employeesToShow.forEach((emp) => { 
-          grandAttended += Number(salesData.leadSummary[emp][currentSummaryMonth].att || 0); 
-        });
-        
-        // Add attended column
-        totalRow += `<td class="total-cell">${grandAttended}</td>`;
-        
-        // Calculate and add postponed column
-        const grandPostponed = Math.max(0, grandTotal - grandAttended);
-        totalRow += `<td class="total-cell">${grandPostponed}</td>`;
-        
-        // Add grand total
-        totalRow += `<td class="total-cell">${grandTotal}</td></tr>`; 
-        summaryFooter.innerHTML += totalRow;
+let totalRow = `<tr><td class="name-cell">TOTAL</td>`; 
+
+let grandTotal = 0;
+let grandAttended = 0;
+
+// FAMILY totals (pre, off, rep, app)
+["pre", "off", "rep", "app"].forEach((key) => {
+  let columnTotal = 0; 
+
+  employeesToShow.forEach((emp) => { 
+    columnTotal += Number(
+      salesData.leadSummary[emp][currentSummaryMonth]?.[key] || 0
+    ); 
+  });
+
+  grandTotal += columnTotal; 
+  totalRow += `<td class="total-cell">${columnTotal}</td>`;
+});
+
+// ✅ TOTAL column (after family)
+totalRow += `<td class="total-cell">${grandTotal}</td>`;
+
+// Calculate attended total
+employeesToShow.forEach((emp) => { 
+  grandAttended += Number(
+    salesData.leadSummary[emp][currentSummaryMonth]?.att || 0
+  ); 
+});
+
+// ✅ ATTENDED column
+totalRow += `<td class="total-cell">${grandAttended}</td>`;
+
+// ✅ POSTPONED column (after attended)
+const grandPostponed = Math.max(0, grandTotal - grandAttended);
+totalRow += `<td class="total-cell">${grandPostponed}</td>`;
+
+totalRow += `</tr>`;
+
+summaryFooter.innerHTML += totalRow;
+
       }
 
       function applyBatchSelection() {
