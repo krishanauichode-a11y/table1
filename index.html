@@ -845,6 +845,30 @@
       .batch-month-select {
         min-width: 150px;
       }
+      
+      .batch-removal-container {
+        background: var(--gray-50);
+        border-radius: var(--radius-sm);
+        padding: 16px;
+        margin-bottom: 20px;
+        border: 1px solid var(--gray-200);
+      }
+      .batch-removal-title {
+        font-weight: 600;
+        color: var(--gray-700);
+        margin-bottom: 10px;
+        font-size: 16px;
+      }
+      .batch-removal-form {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .batch-select-removal {
+        flex: 1;
+        min-width: 200px;
+      }
 
       /* ================= CHART CONTAINERS ================= */
       .charts-container {
@@ -1110,6 +1134,20 @@
                         </button>
                       </div>
                     </div>
+                    
+                    <!-- NEW: Batch Removal Container -->
+                    <div class="batch-removal-container">
+                      <div class="batch-removal-title">Remove Batch</div>
+                      <div class="batch-removal-form">
+                        <select id="removeBatchSelect" class="select-modern batch-select-removal">
+                          <!-- Options will be populated dynamically -->
+                        </select>
+                        <button class="btn-modern btn-danger-modern batch-btn" onclick="removeBatch()">
+                          <i class="bi bi-trash"></i> Remove Batch
+                        </button>
+                      </div>
+                    </div>
+                    
                     <div class="batch-selection-container">
                       <div class="row">
                         <div class="col-12 col-md-12 col-lg-12">
@@ -1548,6 +1586,7 @@
           renderWebinarCharts();
           updateBatchDropdown();
           updateWebinarBatchDropdown();
+          updateRemoveBatchDropdown(); // New function to populate the remove batch dropdown
         } catch (error) {
           console.error("Error fetching data:", error);
           showNotification("Failed to load data.", "error");
@@ -1751,12 +1790,21 @@
         
         batchToMonthMapping.push(newBatch);
         
+        // Initialize lead summary for all employees for this batch
+        salesData.employees.forEach(emp => {
+          if (!salesData.leadSummary[emp]) {
+            salesData.leadSummary[emp] = {};
+          }
+          salesData.leadSummary[emp][newBatch.batchIndex] = { pre: 0, off: 0, rep: 0, app: 0, att: 0 };
+        });
+        
         // Clear input fields
         document.getElementById("newBatchName").value = "";
         document.getElementById("newBatchMonth").value = "0";
         
         // Update UI
         updateBatchDropdown();
+        updateRemoveBatchDropdown();
         
         showNotification(`Batch "${batchName}" added successfully!`, "success");
       }
@@ -1775,6 +1823,85 @@
         // Set current selection if available
         if (currentSummaryMonth !== null && currentSummaryMonth < batchToMonthMapping.length) {
           dropdown.value = currentSummaryMonth;
+        }
+      }
+      
+      // NEW: Function to update the remove batch dropdown
+      function updateRemoveBatchDropdown() {
+        const dropdown = document.getElementById("removeBatchSelect");
+        dropdown.innerHTML = "";
+        
+        batchToMonthMapping.forEach(batch => {
+          const option = document.createElement("option");
+          option.value = batch.batchIndex;
+          option.textContent = batch.batchName;
+          dropdown.appendChild(option);
+        });
+        
+        // Disable if there's only one batch
+        if (batchToMonthMapping.length <= 1) {
+          dropdown.disabled = true;
+          dropdown.innerHTML = '<option value="">No batches available to remove</option>';
+        }
+      }
+      
+      // NEW: Function to remove a batch
+      function removeBatch() {
+        const batchIndex = parseInt(document.getElementById("removeBatchSelect").value);
+        
+        if (isNaN(batchIndex) || batchIndex < 0 || batchIndex >= batchToMonthMapping.length) {
+          showNotification("Please select a valid batch to remove", "warning");
+          return;
+        }
+        
+        // Find the batch to remove
+        const batchToRemove = batchToMonthMapping.find(batch => batch.batchIndex === batchIndex);
+        
+        if (!batchToRemove) {
+          showNotification("Invalid batch selection", "error");
+          return;
+        }
+        
+        // Confirm removal
+        if (!confirm(`Are you sure you want to remove the "${batchToRemove.batchName}" batch? This action cannot be undone.`)) {
+          return;
+        }
+        
+        try {
+          // Remove the batch from the mapping
+          batchToMonthMapping = batchToMonthMapping.filter(batch => batch.batchIndex !== batchIndex);
+          
+          // Re-index the remaining batches
+          batchToMonthMapping.forEach((batch, index) => {
+            batch.batchIndex = index;
+          });
+          
+          // Remove lead summary data for this batch from all employees
+          salesData.employees.forEach(emp => {
+            if (salesData.leadSummary[emp] && salesData.leadSummary[emp][batchIndex]) {
+              delete salesData.leadSummary[emp][batchIndex];
+            }
+          });
+          
+          // Update the current summary month if necessary
+          if (currentSummaryMonth === batchIndex) {
+            currentSummaryMonth = 0; // Reset to first batch
+          } else if (currentSummaryMonth > batchIndex) {
+            currentSummaryMonth--; // Adjust index
+          }
+          
+          // Update UI
+          updateBatchDropdown();
+          updateRemoveBatchDropdown();
+          renderSummary();
+          
+          // Save the changes
+          saveAllData();
+          
+          showNotification(`Batch "${batchToRemove.batchName}" has been removed successfully`, "success");
+        } catch (error) {
+          console.error("Error removing batch:", error);
+          showNotification("Failed to remove batch. Please try again.", "error");
         }
       }
 
