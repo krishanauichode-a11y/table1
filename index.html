@@ -1526,7 +1526,7 @@
       let webinarData = {}; // Will be structured as {year: {batchName: count}}
       let customHeaders = {
         daily: [], 
-        summary: ["Team Member", "Fresher", "Offer", "Repeater", "Family","TOTAL", "Attended", "Postponed"], 
+        summary: ["Team Member", "Fresher", "Offer", "Repeater", "Family", "Basic", "Advance", "TOTAL", "Attended", "Postponed"], 
         monthly: ["Team Member"], 
         batch: ["Team Member"], 
         batchTable: ["Team Member"],
@@ -1641,7 +1641,7 @@
             }
             for(let i = 0; i < batchToMonthMapping.length; i++) {
               if (!salesData.leadSummary[emp][i]) {
-                salesData.leadSummary[emp][i] = { pre: 0, off: 0, rep: 0, app: 0, att: 0 };
+                salesData.leadSummary[emp][i] = { pre: 0, off: 0, rep: 0, app: 0, bas: 0, adv: 0, att: 0 };
               }
             }
           });
@@ -1780,7 +1780,7 @@
             salesData.dailyBookings[name] = {};
             salesData.leadSummary[name] = {};
             for(let i = 0; i < batchToMonthMapping.length; i++) {
-              salesData.leadSummary[name][i] = { pre: 0, off: 0, rep: 0, app: 0, att: 0 };
+              salesData.leadSummary[name][i] = { pre: 0, off: 0, rep: 0, app: 0, bas: 0, adv: 0, att: 0 };
             }
             salesData.monthlyLeads[name] = Array(12).fill(0);
             batchData.employees.push(name); 
@@ -1847,7 +1847,7 @@
           if (!salesData.leadSummary[emp]) {
             salesData.leadSummary[emp] = {};
           }
-          salesData.leadSummary[emp][newBatch.batchIndex] = { pre: 0, off: 0, rep: 0, app: 0, att: 0 };
+          salesData.leadSummary[emp][newBatch.batchIndex] = { pre: 0, off: 0, rep: 0, app: 0, bas: 0, adv: 0, att: 0 };
         });
         
         // Initialize monthly leads data for the year if it doesn't exist
@@ -2265,85 +2265,87 @@
           employeesToShow = salesData.employees.filter(emp => employeeBatches[emp] === currentBatchFilter);
         }
         
-       employeesToShow.forEach((emp) => {
-  const s = salesData.leadSummary[emp][currentSummaryMonth] || { 
-    pre: 0, 
-    off: 0, 
-    rep: 0, 
-    app: 0, 
-    att: 0 
-  };
+        employeesToShow.forEach((emp) => {
+          const s = salesData.leadSummary[emp][currentSummaryMonth] || { 
+            pre: 0, 
+            off: 0, 
+            rep: 0, 
+            app: 0, 
+            bas: 0,
+            adv: 0,
+            att: 0 
+          };
 
-  // Calculate total (sum of pre, off, rep, app)
-  const total = s.pre + s.off + s.rep + s.app;
+          // Calculate total (sum of pre, off, rep, app, bas, adv)
+          const total = s.pre + s.off + s.rep + s.app + s.bas + s.adv;
 
-  // Calculate postponed: Total - Attended
-  const postponed = Math.max(0, total - s.att);
+          // Calculate postponed: Total - Attended
+          const postponed = Math.max(0, total - s.att);
 
-  let row = `<tr><td class="name-cell">${emp}</td>`;
+          let row = `<tr><td class="name-cell">${emp}</td>`;
 
-  // FAMILY columns (pre, off, rep, app)
-  row += `<td class="editable-cell" contenteditable onblur="sUpdate('${emp}','pre',this.innerText)">${s.pre}</td>`;
-  row += `<td class="editable-cell" contenteditable onblur="sUpdate('${emp}','off',this.innerText)">${s.off}</td>`;
-  row += `<td class="editable-cell" contenteditable onblur="sUpdate('${emp}','rep',this.innerText)">${s.rep}</td>`;
-  row += `<td class="editable-cell" contenteditable onblur="sUpdate('${emp}','app',this.innerText)">${s.app}</td>`;
+          // FAMILY columns (pre, off, rep, app, bas, adv)
+          row += `<td class="editable-cell" contenteditable onblur="sUpdate('${emp}','pre',this.innerText)">${s.pre}</td>`;
+          row += `<td class="editable-cell" contenteditable onblur="sUpdate('${emp}','off',this.innerText)">${s.off}</td>`;
+          row += `<td class="editable-cell" contenteditable onblur="sUpdate('${emp}','rep',this.innerText)">${s.rep}</td>`;
+          row += `<td class="editable-cell" contenteditable onblur="sUpdate('${emp}','app',this.innerText)">${s.app}</td>`;
+          row += `<td class="editable-cell" contenteditable onblur="sUpdate('${emp}','bas',this.innerText)">${s.bas}</td>`;
+          row += `<td class="editable-cell" contenteditable onblur="sUpdate('${emp}','adv',this.innerText)">${s.adv}</td>`;
 
-  // ✅ Total (after FAMILY)
-  row += `<td class="total-cell">${total}</td>`;
+          // ✅ Total (after FAMILY)
+          row += `<td class="total-cell">${total}</td>`;
 
-  // ✅ Attended
-  row += `<td class="editable-cell" contenteditable onblur="sUpdate('${emp}','att',this.innerText)">${s.att}</td>`;
+          // ✅ Attended
+          row += `<td class="editable-cell" contenteditable onblur="sUpdate('${emp}','att',this.innerText)">${s.att}</td>`;
 
-  // ✅ Postponed
-  row += `<td class="total-cell">${postponed}</td>`;
+          // ✅ Postponed
+          row += `<td class="total-cell">${postponed}</td>`;
 
-  row += `</tr>`;
+          row += `</tr>`;
 
-  summaryBody.innerHTML += row;
-});
-
+          summaryBody.innerHTML += row;
+        });
         
         summaryFooter.innerHTML = ""; 
-let totalRow = `<tr><td class="name-cell">TOTAL</td>`; 
+        let totalRow = `<tr><td class="name-cell">TOTAL</td>`; 
 
-let grandTotal = 0;
-let grandAttended = 0;
+        let grandTotal = 0;
+        let grandAttended = 0;
 
-// FAMILY totals (pre, off, rep, app)
-["pre", "off", "rep", "app"].forEach((key) => {
-  let columnTotal = 0; 
+        // FAMILY totals (pre, off, rep, app, bas, adv)
+        ["pre", "off", "rep", "app", "bas", "adv"].forEach((key) => {
+          let columnTotal = 0; 
 
-  employeesToShow.forEach((emp) => { 
-    columnTotal += Number(
-      salesData.leadSummary[emp][currentSummaryMonth]?.[key] || 0
-    ); 
-  });
+          employeesToShow.forEach((emp) => { 
+            columnTotal += Number(
+              salesData.leadSummary[emp][currentSummaryMonth]?.[key] || 0
+            ); 
+          });
 
-  grandTotal += columnTotal; 
-  totalRow += `<td class="total-cell">${columnTotal}</td>`;
-});
+          grandTotal += columnTotal; 
+          totalRow += `<td class="total-cell">${columnTotal}</td>`;
+        });
 
-// ✅ TOTAL column (after family)
-totalRow += `<td class="total-cell">${grandTotal}</td>`;
+        // ✅ TOTAL column (after family)
+        totalRow += `<td class="total-cell">${grandTotal}</td>`;
 
-// Calculate attended total
-employeesToShow.forEach((emp) => { 
-  grandAttended += Number(
-    salesData.leadSummary[emp][currentSummaryMonth]?.att || 0
-  ); 
-});
+        // Calculate attended total
+        employeesToShow.forEach((emp) => { 
+          grandAttended += Number(
+            salesData.leadSummary[emp][currentSummaryMonth]?.att || 0
+          ); 
+        });
 
-// ✅ ATTENDED column
-totalRow += `<td class="total-cell">${grandAttended}</td>`;
+        // ✅ ATTENDED column
+        totalRow += `<td class="total-cell">${grandAttended}</td>`;
 
-// ✅ POSTPONED column (after attended)
-const grandPostponed = Math.max(0, grandTotal - grandAttended);
-totalRow += `<td class="total-cell">${grandPostponed}</td>`;
+        // ✅ POSTPONED column (after attended)
+        const grandPostponed = Math.max(0, grandTotal - grandAttended);
+        totalRow += `<td class="total-cell">${grandPostponed}</td>`;
 
-totalRow += `</tr>`;
+        totalRow += `</tr>`;
 
-summaryFooter.innerHTML += totalRow;
-
+        summaryFooter.innerHTML += totalRow;
       }
 
       function applyBatchSelection() {
@@ -2370,7 +2372,15 @@ summaryFooter.innerHTML += totalRow;
         // Calculate and update leads for all employees
         salesData.employees.forEach(emp => {
           // Get the summary data for the selected batch
-          const summary = salesData.leadSummary[emp][selectedBatchIndex] || { pre: 0, off: 0, rep: 0, app: 0, att: 0 };
+          const summary = salesData.leadSummary[emp][selectedBatchIndex] || { 
+            pre: 0, 
+            off: 0, 
+            rep: 0, 
+            app: 0, 
+            bas: 0,
+            adv: 0,
+            att: 0 
+          };
           
           // Calculate leads based on the rules
           let totalLeads = 0;
@@ -2391,6 +2401,16 @@ summaryFooter.innerHTML += totalRow;
           // Family: 1 = 0 leads, 2 = 1 leads
           if (summary.app >= 2) {
             totalLeads += Math.floor(summary.app / 2) * 1; // 1 lead per 2 family members
+          }
+          
+          // Basic: 4 bookings = 1 lead
+          if (summary.bas >= 4) {
+            totalLeads += Math.floor(summary.bas / 4) * 1; // 1 lead per 4 basic bookings
+          }
+          
+          // Advance: 2 bookings = 1 lead
+          if (summary.adv >= 2) {
+            totalLeads += Math.floor(summary.adv / 2) * 1; // 1 lead per 2 advance bookings
           }
           
           // Initialize monthly leads data for the year if it doesn't exist
@@ -2660,6 +2680,16 @@ summaryFooter.innerHTML += totalRow;
           totalLeads += Math.floor(summary.app / 2) * 1; // 1 lead per 2 family members
         }
         
+        // Basic: 4 bookings = 1 lead
+        if (summary.bas >= 4) {
+          totalLeads += Math.floor(summary.bas / 4) * 1; // 1 lead per 4 basic bookings
+        }
+        
+        // Advance: 2 bookings = 1 lead
+        if (summary.adv >= 2) {
+          totalLeads += Math.floor(summary.adv / 2) * 1; // 1 lead per 2 advance bookings
+        }
+        
         // Initialize monthly leads data for the year if it doesn't exist
         if (!salesData.monthlyLeadsByYear[year]) {
           salesData.monthlyLeadsByYear[year] = {};
@@ -2803,6 +2833,14 @@ summaryFooter.innerHTML += totalRow;
           
           if (summary.app >= 2) {
             additionalLeads += Math.floor(summary.app / 2) * 1; // 1 lead per 2 family members
+          }
+          
+          if (summary.bas >= 4) {
+            additionalLeads += Math.floor(summary.bas / 4) * 1; // 1 lead per 4 basic bookings
+          }
+          
+          if (summary.adv >= 2) {
+            additionalLeads += Math.floor(summary.adv / 2) * 1; // 1 lead per 2 advance bookings
           }
           
           // CONNECTION: Add the calculated leads to the 3rd carousel's structure for the target month.
