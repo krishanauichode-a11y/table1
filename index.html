@@ -955,7 +955,7 @@
           <span id="loginAlertMessage">Invalid username or password</span>
         </div>
         
-        <form id="loginForm" onsubmit="handleLogin(event)">
+        <form id="loginForm">
           <div class="form-group">
             <label class="form-label">
               <i class="bi bi-person-fill"></i> Username
@@ -1074,6 +1074,21 @@
                     <button class="btn btn-sm btn-light ms-auto" onclick="downloadTableAsPDF('dailyBody', 'daily-performance.pdf')"><i class="bi bi-download"></i> PDF</button>
                   </div>
                   <div class="card-body-custom">
+                    <!-- Year selector for Daily Lead Performance -->
+                    <div class="year-selector-container">
+                      <div class="year-selector-title">Select Year for Daily Performance</div>
+                      <div class="year-selector-form">
+                        <select id="dailyYearSelect" class="select-modern year-select" onchange="updateDailyYear()">
+                          <option value="2026">2026</option>
+                          <option value="2027">2027</option>
+                          <option value="2028">2028</option>
+                          <option value="2029">2029</option>
+                          <option value="2030">2030</option>
+                        </select>
+                        <span class="batch-info-badge" id="dailyYearBadge">2026</span>
+                      </div>
+                    </div>
+                    
                     <div class="d-flex justify-content-center mb-4">
                       <select id="monthSelect" class="select-modern" onchange="renderDaily()">
                         <option value="0">January</option>
@@ -1128,6 +1143,13 @@
                           <option value="9">October</option>
                           <option value="10">November</option>
                           <option value="11">December</option>
+                        </select>
+                        <select id="newBatchYear" class="select-modern batch-month-select">
+                          <option value="2026">2026</option>
+                          <option value="2027">2027</option>
+                          <option value="2028">2028</option>
+                          <option value="2029">2029</option>
+                          <option value="2030">2030</option>
                         </select>
                         <button class="btn-modern btn-primary-modern batch-btn" onclick="addNewBatch()">
                           <i class="bi bi-plus-circle"></i> Add Batch
@@ -1186,6 +1208,21 @@
                     <button class="btn btn-sm btn-light ms-auto" onclick="downloadTableAsPDF('monthlyBody', 'monthly-performance.pdf')"><i class="bi bi-download"></i> PDF</button>
                   </div>
                   <div class="card-body-custom">
+                    <!-- Year selector for Monthly Business Performance -->
+                    <div class="year-selector-container">
+                      <div class="year-selector-title">Select Year for Business Performance</div>
+                      <div class="year-selector-form">
+                        <select id="monthlyYearSelect" class="select-modern year-select" onchange="updateMonthlyYear()">
+                          <option value="2026">2026</option>
+                          <option value="2027">2027</option>
+                          <option value="2028">2028</option>
+                          <option value="2029">2029</option>
+                          <option value="2030">2030</option>
+                        </select>
+                        <span class="batch-info-badge" id="monthlyYearBadge">2026</span>
+                      </div>
+                    </div>
+                    
                     <div class="batch-selection-container">
                       <div class="batch-selection-title">Select Month to Highlight</div>
                       <div class="batch-selection-form">
@@ -1260,14 +1297,13 @@
                       <div class="year-selector-title">Select Year for Webinar Leads</div>
                       <div class="year-selector-form">
                         <select id="webinarYearSelect" class="select-modern year-select" onchange="updateWebinarYear()">
-                          <option value="2025">2025</option>
                           <option value="2026">2026</option>
                           <option value="2027">2027</option>
                           <option value="2028">2028</option>
                           <option value="2029">2029</option>
                           <option value="2030">2030</option>
                         </select>
-                        <span class="batch-info-badge" id="currentYearBadge">2025</span>
+                        <span class="batch-info-badge" id="currentYearBadge">2026</span>
                       </div>
                     </div>
                     
@@ -1377,6 +1413,9 @@
         if (isLoggedIn === "true") {
           showDashboard();
         }
+        
+        // FIX: Add event listener for the login form
+        document.getElementById("loginForm").addEventListener("submit", handleLogin);
       });
 
       function handleLogin(event) {
@@ -1441,10 +1480,22 @@
       }
 
       function initializeDashboard() {
+        // Initialize default values
+        currentSummaryMonth = 0; // Default to first batch
+        currentMonthlyMonth = new Date().getMonth();
+        currentWebinarYear = "2026";
+        currentDailyYear = "2026";
+        currentMonthlyYear = "2026";
+        
+        // Set UI values
         document.getElementById("summaryBatchSelect").value = currentSummaryMonth;
         document.getElementById("monthlyMonthSelect").value = currentMonthlyMonth;
         document.getElementById("webinarYearSelect").value = currentWebinarYear;
         document.getElementById("currentYearBadge").textContent = currentWebinarYear;
+        document.getElementById("dailyYearSelect").value = currentDailyYear;
+        document.getElementById("dailyYearBadge").textContent = currentDailyYear;
+        document.getElementById("monthlyYearSelect").value = currentMonthlyYear;
+        document.getElementById("monthlyYearBadge").textContent = currentMonthlyYear;
         
         // Initialize default webinar batches
         initializeDefaultWebinarBatches();
@@ -1482,28 +1533,22 @@
       };
       let currentBatchFilter = "all";
       let currentMonthlyBatchFilter = "all";
-      let currentSummaryMonth = new Date().getMonth();
+      let currentSummaryMonth = 0; // Default to first batch
       let currentMonthlyMonth = new Date().getMonth();
-      let currentWebinarYear = "2025"; // Current year for webinar leads
+      let currentWebinarYear = "2026"; // Current year for webinar leads
+      let currentDailyYear = "2026"; // Current year for daily performance
+      let currentMonthlyYear = "2026"; // Current year for monthly business performance
       
       // Employee batch mapping
       let employeeBatches = {};
       
-      // PERFECT LOGIC: Batch to Month Mapping
-      // This array defines the mapping between batch index and month index
-      // You can easily add more batches here in the future
+      // PERFECT LOGIC: Batch to Month Mapping with Year
+      // This array defines the mapping between batch index and month index with year
       let batchToMonthMapping = [
-        { batchIndex: 0, batchName: "8 March", monthIndex: 2, monthName: "March" },
-        { batchIndex: 1, batchName: "6 April", monthIndex: 3, monthName: "April" },
-        { batchIndex: 2, batchName: "10 May", monthIndex: 4, monthName: "May" }
-        // Add more batches here as needed:
-        // { batchIndex: 3, batchName: "15 June", monthIndex: 5, monthName: "June" },
-        // { batchIndex: 4, batchName: "20 July", monthIndex: 6, monthName: "July" },
-        // { batchIndex: 5, batchName: "25 August", monthIndex: 7, monthName: "August" },
-        // { batchIndex: 6, batchName: "30 September", monthIndex: 8, monthName: "September" },
-        // { batchIndex: 7, batchName: "5 October", monthIndex: 9, monthName: "October" },
-        // { batchIndex: 8, batchName: "10 November", monthIndex: 10, monthName: "November" },
-        // { batchIndex: 9, batchName: "15 December", monthIndex: 11, monthName: "December" }
+        { batchIndex: 0, batchName: "8 March", monthIndex: 2, monthName: "March", year: "2026" },
+        { batchIndex: 1, batchName: "6 April", monthIndex: 3, monthName: "April", year: "2026" },
+        { batchIndex: 2, batchName: "10 May", monthIndex: 4, monthName: "May", year: "2026" }
+        // Add more batches here as needed with year information
       ];
 
       function showLoading() { document.getElementById("loadingOverlay").style.display = "flex"; }
@@ -1573,10 +1618,29 @@
             batchToMonthMapping = data.batchToMonthMapping;
           }
           
+          // Initialize year-based data structures for daily and monthly if they don't exist
+          if (!salesData.dailyBookingsByYear) {
+            salesData.dailyBookingsByYear = {};
+          }
+          if (!salesData.monthlyLeadsByYear) {
+            salesData.monthlyLeadsByYear = {};
+          }
+          
+          // Initialize current year data if it doesn't exist
+          if (!salesData.dailyBookingsByYear[currentDailyYear]) {
+            salesData.dailyBookingsByYear[currentDailyYear] = salesData.dailyBookings || {};
+          }
+          if (!salesData.monthlyLeadsByYear[currentMonthlyYear]) {
+            salesData.monthlyLeadsByYear[currentMonthlyYear] = salesData.monthlyLeads || {};
+          }
+          
+          // Ensure leadSummary data exists for all employees and batches
           salesData.employees.forEach(emp => {
             if (!salesData.leadSummary[emp]) {
               salesData.leadSummary[emp] = {};
-              for(let i = 0; i < 12; i++) {
+            }
+            for(let i = 0; i < batchToMonthMapping.length; i++) {
+              if (!salesData.leadSummary[emp][i]) {
                 salesData.leadSummary[emp][i] = { pre: 0, off: 0, rep: 0, app: 0, att: 0 };
               }
             }
@@ -1594,7 +1658,8 @@
           hideLoading();
         }
       }
-
+      
+      // FIX: Add the missing saveAllData function
       async function saveAllData() {
         try {
           showLoading();
@@ -1603,11 +1668,18 @@
           const response = await fetch(`${API_URL}/sales`, {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              employees: salesData.employees, dailyBookings: salesData.dailyBookings,
-              leadSummary: salesData.leadSummary, monthlyLeads: salesData.monthlyLeads,
-              batchData: batchData, monthlyBatchAdmin: monthlyBatchAdminObject,
-              customHeaders: customHeaders, webinarLeads: webinarMonthlyLeads,
-              employeeBatches: employeeBatches, batchToMonthMapping: batchToMonthMapping,
+              employees: salesData.employees, 
+              dailyBookings: salesData.dailyBookingsByYear[currentDailyYear] || salesData.dailyBookings,
+              dailyBookingsByYear: salesData.dailyBookingsByYear,
+              leadSummary: salesData.leadSummary, 
+              monthlyLeads: salesData.monthlyLeadsByYear[currentMonthlyYear] || salesData.monthlyLeads,
+              monthlyLeadsByYear: salesData.monthlyLeadsByYear,
+              batchData: batchData, 
+              monthlyBatchAdmin: monthlyBatchAdminObject,
+              customHeaders: customHeaders, 
+              webinarLeads: webinarMonthlyLeads,
+              employeeBatches: employeeBatches, 
+              batchToMonthMapping: batchToMonthMapping,
               webinarData: webinarData
             }),
           });
@@ -1615,92 +1687,9 @@
         } catch (error) {
           console.error("Error saving data:", error);
           showNotification("Failed to save data. Please try again.", "error");
-        } finally { hideLoading(); }
-      }
-
-      async function saveWebinarLeads() {
-        const batch = document.getElementById("webinarBatch").value;
-        const count = Number(document.getElementById("webinarLeadCount").value);
-        
-        if (!batch) {
-          showNotification("Please select a webinar batch", "warning");
-          return;
+        } finally { 
+          hideLoading(); 
         }
-        
-        if (isNaN(count) || count < 0) {
-          showNotification("Please enter a valid lead count", "warning");
-          return;
-        }
-        
-        // Initialize year object if it doesn't exist
-        if (!webinarData[currentWebinarYear]) {
-          webinarData[currentWebinarYear] = {};
-        }
-        
-        // Update the batch lead count for the current year
-        webinarData[currentWebinarYear][batch] = count;
-        
-        // Save the data
-        await saveAllData();
-        showNotification(`Leads for "${batch}" batch in ${currentWebinarYear} saved successfully!`, "success");
-        
-        // Update the charts
-        renderWebinarCharts();
-      }
-
-      // Function to update the current year for webinar leads
-      function updateWebinarYear() {
-        const yearSelect = document.getElementById("webinarYearSelect");
-        currentWebinarYear = yearSelect.value;
-        document.getElementById("currentYearBadge").textContent = currentWebinarYear;
-        
-        // Initialize year data if it doesn't exist
-        if (!webinarData[currentWebinarYear]) {
-          webinarData[currentWebinarYear] = {};
-          initializeDefaultWebinarBatches();
-        }
-        
-        // Update the batch dropdown with current year's batches
-        updateWebinarBatchDropdown();
-        
-        // Re-render charts with the new year's data
-        renderWebinarCharts();
-        
-        // Clear the form
-        document.getElementById("webinarBatch").value = "";
-        document.getElementById("webinarLeadCount").value = "";
-        document.getElementById("selectedBatchName").textContent = "No batch selected";
-        
-        showNotification(`Switched to ${currentWebinarYear} webinar data`, "success");
-      }
-
-      async function addSalesEmployee() {
-        const name = document.getElementById("newEmployee").value.trim();
-        if (!name) { showNotification("Please enter an employee name", "warning"); return; }
-        if (salesData.employees.includes(name)) { showNotification("Employee already exists!", "warning"); return; }
-        try {
-          showLoading();
-          const response = await fetch(`${API_URL}/employee`, {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name }),
-          });
-          if (response.ok) {
-            salesData.employees.push(name); salesData.dailyBookings[name] = {};
-            salesData.leadSummary[name] = {};
-            for(let i = 0; i < 12; i++) {
-              salesData.leadSummary[name][i] = { pre: 0, off: 0, rep: 0, app: 0, att: 0 };
-            }
-            salesData.monthlyLeads[name] = Array(12).fill(0);
-            batchData.employees.push(name); batchData.batchLeads[name] = {};
-            batchData.batches.forEach((b) => (batchData.batchLeads[name][b.id] = 0));
-            document.getElementById("newEmployee").value = "";
-            renderAll();
-            showNotification(`${name} added successfully!`, "success");
-          } else { throw new Error("Failed to add employee"); }
-        } catch (error) {
-          console.error("Error adding employee:", error);
-          showNotification("Failed to add employee. Please try again.", "error");
-        } finally { hideLoading(); }
       }
 
       // --- REMOVE EMPLOYEE FUNCTIONS ---
@@ -1750,6 +1739,19 @@
           // Hide the modal
           bootstrap.Modal.getInstance(document.getElementById("removeEmployeeModal")).hide();
           
+          // Remove employee from all year-specific data
+          Object.keys(salesData.dailyBookingsByYear).forEach(year => {
+            if (salesData.dailyBookingsByYear[year][employeeName]) {
+              delete salesData.dailyBookingsByYear[year][employeeName];
+            }
+          });
+          
+          Object.keys(salesData.monthlyLeadsByYear).forEach(year => {
+            if (salesData.monthlyLeadsByYear[year][employeeName]) {
+              delete salesData.monthlyLeadsByYear[year][employeeName];
+            }
+          });
+          
           // Refresh the data from the server
           await fetchData();
           
@@ -1761,11 +1763,60 @@
           hideLoading();
         }
       }
+      
+      // FIX: Add the missing addSalesEmployee function
+      async function addSalesEmployee() {
+        const name = document.getElementById("newEmployee").value.trim();
+        if (!name) { showNotification("Please enter an employee name", "warning"); return; }
+        if (salesData.employees.includes(name)) { showNotification("Employee already exists!", "warning"); return; }
+        try {
+          showLoading();
+          const response = await fetch(`${API_URL}/employee`, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name }),
+          });
+          if (response.ok) {
+            salesData.employees.push(name); 
+            salesData.dailyBookings[name] = {};
+            salesData.leadSummary[name] = {};
+            for(let i = 0; i < batchToMonthMapping.length; i++) {
+              salesData.leadSummary[name][i] = { pre: 0, off: 0, rep: 0, app: 0, att: 0 };
+            }
+            salesData.monthlyLeads[name] = Array(12).fill(0);
+            batchData.employees.push(name); 
+            batchData.batchLeads[name] = {};
+            batchData.batches.forEach((b) => (batchData.batchLeads[name][b.id] = 0));
+            
+            // Initialize year-specific data for the new employee
+            Object.keys(salesData.dailyBookingsByYear).forEach(year => {
+              if (!salesData.dailyBookingsByYear[year][name]) {
+                salesData.dailyBookingsByYear[year][name] = {};
+              }
+            });
+            
+            Object.keys(salesData.monthlyLeadsByYear).forEach(year => {
+              if (!salesData.monthlyLeadsByYear[year][name]) {
+                salesData.monthlyLeadsByYear[year][name] = Array(12).fill(0);
+              }
+            });
+            
+            document.getElementById("newEmployee").value = "";
+            renderAll();
+            showNotification(`${name} added successfully!`, "success");
+          } else { throw new Error("Failed to add employee"); }
+        } catch (error) {
+          console.error("Error adding employee:", error);
+          showNotification("Failed to add employee. Please try again.", "error");
+        } finally { 
+          hideLoading(); 
+        }
+      }
 
       // --- BATCH MANAGEMENT FUNCTIONS ---
       function addNewBatch() {
         const batchName = document.getElementById("newBatchName").value.trim();
         const monthIndex = parseInt(document.getElementById("newBatchMonth").value);
+        const year = document.getElementById("newBatchYear").value;
         const monthNames = ["January", "February", "March", "April", "May", "June", 
                            "July", "August", "September", "October", "November", "December"];
         
@@ -1774,9 +1825,9 @@
           return;
         }
         
-        // Check if batch name already exists
-        if (batchToMonthMapping.some(batch => batch.batchName === batchName)) {
-          showNotification("Batch with this name already exists", "warning");
+        // Check if batch name already exists for the same year
+        if (batchToMonthMapping.some(batch => batch.batchName === batchName && batch.year === year)) {
+          showNotification("Batch with this name already exists for " + year, "warning");
           return;
         }
         
@@ -1785,7 +1836,8 @@
           batchIndex: batchToMonthMapping.length,
           batchName: batchName,
           monthIndex: monthIndex,
-          monthName: monthNames[monthIndex]
+          monthName: monthNames[monthIndex],
+          year: year
         };
         
         batchToMonthMapping.push(newBatch);
@@ -1798,15 +1850,24 @@
           salesData.leadSummary[emp][newBatch.batchIndex] = { pre: 0, off: 0, rep: 0, app: 0, att: 0 };
         });
         
+        // Initialize monthly leads data for the year if it doesn't exist
+        if (!salesData.monthlyLeadsByYear[year]) {
+          salesData.monthlyLeadsByYear[year] = {};
+          salesData.employees.forEach(emp => {
+            salesData.monthlyLeadsByYear[year][emp] = Array(12).fill(0);
+          });
+        }
+        
         // Clear input fields
         document.getElementById("newBatchName").value = "";
         document.getElementById("newBatchMonth").value = "0";
+        document.getElementById("newBatchYear").value = "2026";
         
         // Update UI
         updateBatchDropdown();
         updateRemoveBatchDropdown();
         
-        showNotification(`Batch "${batchName}" added successfully!`, "success");
+        showNotification(`Batch "${batchName}" for ${year} added successfully!`, "success");
       }
       
       function updateBatchDropdown() {
@@ -1816,7 +1877,7 @@
         batchToMonthMapping.forEach(batch => {
           const option = document.createElement("option");
           option.value = batch.batchIndex;
-          option.textContent = batch.batchName;
+          option.textContent = `${batch.batchName} (${batch.year})`;
           dropdown.appendChild(option);
         });
         
@@ -1834,7 +1895,7 @@
         batchToMonthMapping.forEach(batch => {
           const option = document.createElement("option");
           option.value = batch.batchIndex;
-          option.textContent = batch.batchName;
+          option.textContent = `${batch.batchName} (${batch.year})`;
           dropdown.appendChild(option);
         });
         
@@ -1863,7 +1924,7 @@
         }
         
         // Confirm removal
-        if (!confirm(`Are you sure you want to remove the "${batchToRemove.batchName}" batch? This action cannot be undone.`)) {
+        if (!confirm(`Are you sure you want to remove the "${batchToRemove.batchName} (${batchToRemove.year})" batch? This action cannot be undone.`)) {
           return;
         }
         
@@ -1898,7 +1959,7 @@
           // Save the changes
           saveAllData();
           
-          showNotification(`Batch "${batchToRemove.batchName}" has been removed successfully`, "success");
+          showNotification(`Batch "${batchToRemove.batchName} (${batchToRemove.year})" has been removed successfully`, "success");
         } catch (error) {
           console.error("Error removing batch:", error);
           showNotification("Failed to remove batch. Please try again.", "error");
@@ -1914,10 +1975,8 @@
         
         // Check if current year has batches, if not add default ones
         if (Object.keys(webinarData[currentWebinarYear]).length === 0) {
-          const defaultBatches = [
-           
-          ];
-          
+          // FIX: Add some default batches so the chart isn't empty
+          const defaultBatches = ["Q1", "Q2", "Q3", "Q4"]; 
           defaultBatches.forEach(batch => {
             webinarData[currentWebinarYear][batch] = 0;
           });
@@ -1955,7 +2014,8 @@
         
         showNotification(`Webinar batch "${batchName}" added successfully for ${currentWebinarYear}!`, "success");
       }
-
+      
+      // FIX: Add the missing updateWebinarBatchDropdown function
       function updateWebinarBatchDropdown() {
         const batchSelect = document.getElementById("webinarBatch");
         batchSelect.innerHTML = "";
@@ -1980,6 +2040,7 @@
         }
       }
 
+      // FIX: Add the missing updateBatchSelection function
       function updateBatchSelection() {
         const batchSelect = document.getElementById("webinarBatch");
         const selectedBatchName = document.getElementById("selectedBatchName");
@@ -1994,31 +2055,182 @@
           document.getElementById("webinarLeadCount").value = "";
         }
       }
+      
+      // FIX: Add the missing saveWebinarLeads function
+      async function saveWebinarLeads() {
+        const batch = document.getElementById("webinarBatch").value;
+        const count = Number(document.getElementById("webinarLeadCount").value);
+        
+        if (!batch) {
+          showNotification("Please select a webinar batch", "warning");
+          return;
+        }
+        
+        if (isNaN(count) || count < 0) {
+          showNotification("Please enter a valid lead count", "warning");
+          return;
+        }
+        
+        // Initialize year object if it doesn't exist
+        if (!webinarData[currentWebinarYear]) {
+          webinarData[currentWebinarYear] = {};
+        }
+        
+        // Update the batch lead count for the current year
+        webinarData[currentWebinarYear][batch] = count;
+        
+        // Save the data
+        await saveAllData();
+        showNotification(`Leads for "${batch}" batch in ${currentWebinarYear} saved successfully!`, "success");
+        
+        // Update the charts
+        renderWebinarCharts();
+      }
+
+      // FIX: Add the missing updateWebinarYear function
+      function updateWebinarYear() {
+        const yearSelect = document.getElementById("webinarYearSelect");
+        currentWebinarYear = yearSelect.value;
+        document.getElementById("currentYearBadge").textContent = currentWebinarYear;
+        
+        // Initialize year data if it doesn't exist
+        if (!webinarData[currentWebinarYear]) {
+          webinarData[currentWebinarYear] = {};
+          initializeDefaultWebinarBatches();
+        }
+        
+        // Update the batch dropdown with current year's batches
+        updateWebinarBatchDropdown();
+        
+        // Re-render charts with the new year's data
+        renderWebinarCharts();
+        
+        // Clear the form
+        document.getElementById("webinarBatch").value = "";
+        document.getElementById("webinarLeadCount").value = "";
+        document.getElementById("selectedBatchName").textContent = "No batch selected";
+        
+        showNotification(`Switched to ${currentWebinarYear} webinar data`, "success");
+      }
+      
+      // FIX: Add the missing updateDailyYear function
+      function updateDailyYear() {
+        const yearSelect = document.getElementById("dailyYearSelect");
+        currentDailyYear = yearSelect.value;
+        document.getElementById("dailyYearBadge").textContent = currentDailyYear;
+        
+        // Initialize year data if it doesn't exist
+        if (!salesData.dailyBookingsByYear[currentDailyYear]) {
+          salesData.dailyBookingsByYear[currentDailyYear] = {};
+          // Initialize with empty data for all employees
+          salesData.employees.forEach(emp => {
+            salesData.dailyBookingsByYear[currentDailyYear][emp] = {};
+          });
+        }
+        
+        // Update the daily bookings reference
+        salesData.dailyBookings = salesData.dailyBookingsByYear[currentDailyYear];
+        
+        // Re-render the daily table with the new year's data
+        renderDaily();
+        
+        showNotification(`Switched to ${currentDailyYear} daily performance data`, "success");
+      }
+      
+      // FIX: Add the missing updateMonthlyYear function
+      function updateMonthlyYear() {
+        const yearSelect = document.getElementById("monthlyYearSelect");
+        currentMonthlyYear = yearSelect.value;
+        document.getElementById("monthlyYearBadge").textContent = currentMonthlyYear;
+        
+        // Initialize year data if it doesn't exist
+        if (!salesData.monthlyLeadsByYear[currentMonthlyYear]) {
+          salesData.monthlyLeadsByYear[currentMonthlyYear] = {};
+          // Initialize with empty data for all employees
+          salesData.employees.forEach(emp => {
+            salesData.monthlyLeadsByYear[currentMonthlyYear][emp] = Array(12).fill(0);
+          });
+        }
+        
+        // Update the monthly leads reference
+        salesData.monthlyLeads = salesData.monthlyLeadsByYear[currentMonthlyYear];
+        
+        // Re-render the monthly table with the new year's data
+        renderMonthly();
+        
+        showNotification(`Switched to ${currentMonthlyYear} monthly business performance data`, "success");
+      }
 
       // --- RENDER FUNCTIONS ---
-      function daysInMonth(month) { return new Date(new Date().getFullYear(), month + 1, 0).getDate(); }
+      function daysInMonth(year, month) { 
+        return new Date(year, month + 1, 0).getDate(); 
+      }
+      
       function renderDaily() {
-        const month = +monthSelect.value; const days = daysInMonth(month);
-        if (customHeaders.daily.length === 0) { customHeaders.daily.push("Team Member"); for (let d = 1; d <= 31; d++) { customHeaders.daily.push(d.toString()); } customHeaders.daily.push("TOTAL"); }
+        const month = +document.getElementById("monthSelect").value; 
+        const year = parseInt(currentDailyYear);
+        const days = daysInMonth(year, month);
+        
+        // Initialize custom headers for daily if not exists
+        if (customHeaders.daily.length === 0) { 
+          customHeaders.daily.push("Team Member"); 
+          for (let d = 1; d <= 31; d++) { 
+            customHeaders.daily.push(d.toString()); 
+          } 
+          customHeaders.daily.push("TOTAL"); 
+        }
+        
+        // Clear and rebuild the header with just numbers
         dailyHead.innerHTML = `<th class="name-cell editable-header" contenteditable onblur="updateDailyHeader(0, this.innerText)">${customHeaders.daily[0]}</th>`;
-        for (let d = 1; d <= days; d++) { dailyHead.innerHTML += `<th class="editable-header" contenteditable onblur="updateDailyHeader(${d}, this.innerText)">${customHeaders.daily[d] || d}</th>`; }
+        for (let d = 1; d <= days; d++) { 
+          const headerText = customHeaders.daily[d] || `${d}`;
+          dailyHead.innerHTML += `<th class="editable-header" contenteditable onblur="updateDailyHeader(${d}, this.innerText)">${headerText}</th>`; 
+        }
         dailyHead.innerHTML += `<th class="total-cell editable-header" contenteditable onblur="updateDailyHeader(${days + 1}, this.innerText)">${customHeaders.daily[days + 1] || "TOTAL"}</th>`;
+        
+        // Render body with editable cells for letters
         dailyBody.innerHTML = "";
         salesData.employees.forEach((emp) => {
+          if (!salesData.dailyBookings[emp]) salesData.dailyBookings[emp] = {};
           if (!salesData.dailyBookings[emp][month]) salesData.dailyBookings[emp][month] = {};
-          let total = 0; let row = `<tr><td class="name-cell">${emp}</td>`;
+          
+          let total = 0; 
+          let row = `<tr><td class="name-cell">${emp}</td>`;
+          
           for (let d = 1; d <= days; d++) {
-            const val = salesData.dailyBookings[emp][month][d] || ""; total += Number(val || 0);
+            const val = salesData.dailyBookings[emp][month][d] || ""; 
+            // Extract numeric value from text for total
+            const numericValue = Number(val.toString().replace(/[^0-9]/g, '')) || 0;
+            total += numericValue;
+            
+            // Create cell that can accept letters
             row += `<td class="editable-cell" contenteditable onblur="updateDaily('${emp}',${month},${d},this.innerText)">${val}</td>`;
           }
-          row += `<td class="total-cell">${total}</td></tr>`; dailyBody.innerHTML += row;
+          
+          row += `<td class="total-cell">${total}</td></tr>`; 
+          dailyBody.innerHTML += row;
         });
-        dailyFooter.innerHTML = ""; let totalRow = `<tr><td class="name-cell">TOTAL</td>`; let grandTotal = 0;
+        
+        // Render footer
+        dailyFooter.innerHTML = ""; 
+        let totalRow = `<tr><td class="name-cell">TOTAL</td>`; 
+        let grandTotal = 0;
+        
         for (let d = 1; d <= days; d++) {
-          let dayTotal = 0; salesData.employees.forEach((emp) => { dayTotal += Number(salesData.dailyBookings[emp][month][d] || 0); });
-          grandTotal += dayTotal; totalRow += `<td class="total-cell">${dayTotal}</td>`;
+          let dayTotal = 0; 
+          salesData.employees.forEach((emp) => { 
+            const val = salesData.dailyBookings[emp][month][d] || "";
+            // Extract numeric value from text for day total
+            const numericValue = Number(val.toString().replace(/[^0-9]/g, '')) || 0;
+            dayTotal += numericValue;
+          });
+          grandTotal += dayTotal;
+          
+          totalRow += `<td class="total-cell">${dayTotal}</td>`;
         }
-        totalRow += `<td class="total-cell">${grandTotal}</td></tr>`; dailyFooter.innerHTML += totalRow;
+        
+        totalRow += `<td class="total-cell">${grandTotal}</td></tr>`; 
+        dailyFooter.innerHTML += totalRow;
       }
       
       function renderBatchSummary() {
@@ -2031,6 +2243,13 @@
         const batchSelect = document.getElementById("summaryBatchSelect");
         if (batchSelect) {
           currentSummaryMonth = parseInt(batchSelect.value);
+        }
+        
+        // Update the badge to show the selected batch
+        const badge = document.getElementById("summaryBatchBadge");
+        if (badge && batchToMonthMapping[currentSummaryMonth]) {
+          badge.textContent = batchToMonthMapping[currentSummaryMonth].batchName;
+          badge.style.display = "inline-block";
         }
         
         summaryHead.innerHTML = `<th class="name-cell editable-header" contenteditable onblur="updateSummaryHeader(0, this.innerText)">${customHeaders.summary[0]}</th>`;
@@ -2139,8 +2358,9 @@ summaryFooter.innerHTML += totalRow;
           return;
         }
         
-        // Get the target month from the mapping
+        // Get the target month and year from the mapping
         const targetMonth = batchMapping.monthIndex;
+        const targetYear = batchMapping.year;
         const batchName = batchMapping.batchName;
         const monthName = batchMapping.monthName;
         
@@ -2157,124 +2377,209 @@ summaryFooter.innerHTML += totalRow;
           
           // Fresher: 1 = 1 lead
           if (summary.pre > 0) {
-            totalLeads += summary.pre * 1;
+            totalLeads += summary.pre * 1; // 1 lead per fresher
           }
           
           // Offer: 1 = 0 leads, 2 = 1 lead
           if (summary.off >= 2) {
-            totalLeads += Math.floor(summary.off / 2) * 1;
+            totalLeads += Math.floor(summary.off / 2) * 1; // 1 lead per 2 offers
           }
           
           // Repeater: 1 = 0 leads, 2 = 0 leads (no leads from repeaters)
+          // No calculation needed for repeater leads
           
           // Family: 1 = 0 leads, 2 = 1 leads
           if (summary.app >= 2) {
-            totalLeads += Math.floor(summary.app / 2) * 1;
+            totalLeads += Math.floor(summary.app / 2) * 1; // 1 lead per 2 family members
           }
           
-          // Update the monthly leads for the target month
-          salesData.monthlyLeads[emp][targetMonth] = totalLeads;
+          // Initialize monthly leads data for the year if it doesn't exist
+          if (!salesData.monthlyLeadsByYear[targetYear]) {
+            salesData.monthlyLeadsByYear[targetYear] = {};
+            salesData.employees.forEach(e => {
+              salesData.monthlyLeadsByYear[targetYear][e] = Array(12).fill(0);
+            });
+          }
+          
+          // Update the monthly leads for the target month in the specific year
+          salesData.monthlyLeadsByYear[targetYear][emp][targetMonth] = totalLeads;
         });
         
-        // Update the 3rd carousel to show the target month
+        // Update the 3rd carousel to show the target month and year
         document.getElementById('monthlyMonthSelect').value = targetMonth;
+        document.getElementById('monthlyYearSelect').value = targetYear;
         currentMonthlyMonth = targetMonth;
+        currentMonthlyYear = targetYear;
         
         // Re-render both carousels
         renderSummary();
         renderMonthly();
         
-        showNotification(`${batchName} batch leads calculated and updated in ${monthName} month!`, "success");
+        showNotification(`${batchName} batch leads calculated and updated in ${monthName} ${targetYear}!`, "success");
       }
       
       function renderMonthly() {
         const monthSelect = document.getElementById("monthlyMonthSelect");
+        const yearSelect = document.getElementById("monthlyYearSelect");
         if (monthSelect) {
           currentMonthlyMonth = parseInt(monthSelect.value);
         }
+        if (yearSelect) {
+          currentMonthlyYear = yearSelect.value;
+        }
 
-        if (customHeaders.monthly.length === 1) { const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]; customHeaders.monthly = [...customHeaders.monthly, ...months, "TOTAL"]; }
+        if (customHeaders.monthly.length === 1) { 
+          const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]; 
+          customHeaders.monthly = [...customHeaders.monthly, ...months, "TOTAL"]; 
+        }
+        
         monthlyHead.innerHTML = `<th class="name-cell editable-header" contenteditable onblur="updateMonthlyHeader(0, this.innerText)">${customHeaders.monthly[0]}</th>`;
-        for (let i = 1; i < customHeaders.monthly.length - 1; i++) { monthlyHead.innerHTML += `<th class="editable-header" contenteditable onblur="updateMonthlyHeader(${i}, this.innerText)">${customHeaders.monthly[i]}</th>`; }
+        for (let i = 1; i < customHeaders.monthly.length - 1; i++) { 
+          monthlyHead.innerHTML += `<th class="editable-header" contenteditable onblur="updateMonthlyHeader(${i}, this.innerText)">${customHeaders.monthly[i]}</th>`; 
+        }
         monthlyHead.innerHTML += `<th class="total-cell editable-header" contenteditable onblur="updateMonthlyHeader(${customHeaders.monthly.length - 1}, this.innerText)">${customHeaders.monthly[customHeaders.monthly.length - 1]}</th>`;
         monthlyBody.innerHTML = "";
         
-        // Filter employees based on batch selection
-        let employeesToShow = salesData.employees;
-        if (currentMonthlyBatchFilter !== "all") {
-          employeesToShow = salesData.employees.filter(emp => employeeBatches[emp] === currentMonthlyBatchFilter);
-        }
+        // Get the monthly leads data for the current year
+        const currentYearMonthlyLeads = salesData.monthlyLeadsByYear[currentMonthlyYear] || {};
         
-        employeesToShow.forEach((emp) => {
-          let total = 0; let row = `<tr><td class="name-cell">${emp}</td>`;
-          salesData.monthlyLeads[emp].forEach((v, i) => {
+        salesData.employees.forEach((emp) => {
+          // Get the monthly leads for the employee in the current year, or use empty array if not available
+          const empMonthlyLeads = currentYearMonthlyLeads[emp] || Array(12).fill(0);
+          
+          let total = 0; 
+          let row = `<tr><td class="name-cell">${emp}</td>`;
+          
+          empMonthlyLeads.forEach((v, i) => {
             total += Number(v || 0);
             const isCurrentMonth = i === currentMonthlyMonth;
             const cellClass = isCurrentMonth ? "editable-cell current-month" : "editable-cell";
             row += `<td class="${cellClass}" contenteditable onblur="updateMonthly('${emp}',${i},this.innerText)">${v}</td>`;
           });
-          row += `<td class="total-cell">${total}</td></tr>`; monthlyBody.innerHTML += row;
+          
+          row += `<td class="total-cell">${total}</td></tr>`; 
+          monthlyBody.innerHTML += row;
         });
-        monthlyFooter.innerHTML = ""; let totalRow = `<tr><td class="name-cell">TOTAL</td>`; let grandTotal = 0;
+        
+        monthlyFooter.innerHTML = ""; 
+        let totalRow = `<tr><td class="name-cell">TOTAL</td>`; 
+        let grandTotal = 0;
+        
         for (let m = 0; m < 12; m++) {
           let monthTotal = 0; 
-          employeesToShow.forEach((emp) => { monthTotal += Number(salesData.monthlyLeads[emp][m] || 0); });
+          salesData.employees.forEach((emp) => { 
+            const empMonthlyLeads = currentYearMonthlyLeads[emp] || Array(12).fill(0);
+            monthTotal += Number(empMonthlyLeads[m] || 0); 
+          });
           grandTotal += monthTotal;
           const isCurrentMonth = m === currentMonthlyMonth;
           const cellClass = isCurrentMonth ? "total-cell current-month" : "total-cell";
           totalRow += `<td class="${cellClass}">${monthTotal}</td>`;
         }
-        totalRow += `<td class="total-cell">${grandTotal}</td></tr>`; monthlyFooter.innerHTML += totalRow;
+        
+        totalRow += `<td class="total-cell">${grandTotal}</td></tr>`; 
+        monthlyFooter.innerHTML += totalRow;
       }
       
       function renderBatch() {
-        if (customHeaders.batch.length === 1) { batchData.batches.forEach((b) => customHeaders.batch.push(b.label)); customHeaders.batch.push("TOTAL"); }
+        if (customHeaders.batch.length === 1) { 
+          batchData.batches.forEach((b) => customHeaders.batch.push(b.label)); 
+          customHeaders.batch.push("TOTAL"); 
+        }
+        
         batchHead.innerHTML = `<th class="name-cell editable-header" contenteditable onblur="updateBatchHeader(0, this.innerText)">${customHeaders.batch[0]}</th>`;
-        for (let i = 1; i < customHeaders.batch.length - 1; i++) { batchHead.innerHTML += `<th class="editable-header" contenteditable onblur="updateBatchHeader(${i}, this.innerText)">${customHeaders.batch[i]}</th>`; }
+        for (let i = 1; i < customHeaders.batch.length - 1; i++) { 
+          batchHead.innerHTML += `<th class="editable-header" contenteditable onblur="updateBatchHeader(${i}, this.innerText)">${customHeaders.batch[i]}</th>`; 
+        }
         batchHead.innerHTML += `<th class="total-cell editable-header" contenteditable onblur="updateBatchHeader(${customHeaders.batch.length - 1}, this.innerText)">${customHeaders.batch[customHeaders.batch.length - 1]}</th>`;
         batchBody.innerHTML = "";
+        
         salesData.employees.forEach((emp) => {
-          let total = 0; let row = `<tr><td class="name-cell">${emp}</td>`;
+          let total = 0; 
+          let row = `<tr><td class="name-cell">${emp}</td>`;
+          
           batchData.batches.forEach((b) => {
-            const val = batchData.batchLeads[emp][b.id] || 0; total += Number(val || 0);
+            const val = batchData.batchLeads[emp][b.id] || 0; 
+            total += Number(val || 0);
             row += `<td class="editable-cell" contenteditable onblur="updateBatch('${emp}',${b.id},this.innerText)">${val}</td>`;
           });
-          row += `<td class="total-cell">${total}</td></tr>`; batchBody.innerHTML += row;
+          
+          row += `<td class="total-cell">${total}</td></tr>`; 
+          batchBody.innerHTML += row;
         });
-        batchFooter.innerHTML = ""; let totalRow = `<tr><td class="name-cell">TOTAL</td>`; let grandTotal = 0;
+        
+        batchFooter.innerHTML = ""; 
+        let totalRow = `<tr><td class="name-cell">TOTAL</td>`; 
+        let grandTotal = 0;
+        
         batchData.batches.forEach((b) => {
-          let sum = 0; salesData.employees.forEach((e) => (sum += Number(batchData.batchLeads[e][b.id] || 0)));
-          grandTotal += sum; totalRow += `<td class="total-cell">${sum}</td>`;
+          let sum = 0; 
+          salesData.employees.forEach((e) => (sum += Number(batchData.batchLeads[e][b.id] || 0)));
+          grandTotal += sum; 
+          totalRow += `<td class="total-cell">${sum}</td>`;
         });
-        totalRow += `<td class="total-cell">${grandTotal}</td></tr>`; batchFooter.innerHTML += totalRow;
-        let thcRow = `<tr><td class="name-cell">T.H.C</td>`; let thcTotal = 0;
+        
+        totalRow += `<td class="total-cell">${grandTotal}</td></tr>`; 
+        batchFooter.innerHTML += totalRow;
+        
+        let thcRow = `<tr><td class="name-cell">T.H.C</td>`; 
+        let thcTotal = 0;
+        
         batchData.batches.forEach((b) => {
-          const thc = batchData.thc[b.id] || 0; thcTotal += Number(thc || 0);
+          const thc = batchData.thc[b.id] || 0; 
+          thcTotal += Number(thc || 0);
           thcRow += `<td class="editable-cell" contenteditable onblur="updateTHC(${b.id},this.innerText)">${thc}</td>`;
         });
-        thcRow += `<td class="total-cell">${thcTotal}</td></tr>`; batchFooter.innerHTML += thcRow;
+        
+        thcRow += `<td class="total-cell">${thcTotal}</td></tr>`; 
+        batchFooter.innerHTML += thcRow;
       }
+      
       function renderBatchTable() {
-        if (customHeaders.batchTable.length === 1) { const columns = ["January lead", "29 Jul", "Jul Lead", "19 Aug", "Aug Lead", "16 Sep", "Sep Lead", "13 Oct", "Oct Lead", "10 Nov", "20 Nov", "Nov Lead", "14 Dec", "Dec Lead", "Jan Lead"]; customHeaders.batchTable = [...customHeaders.batchTable, ...columns, "TOTAL"]; }
+        if (customHeaders.batchTable.length === 1) { 
+          const columns = ["January lead", "29 Jul", "Jul Lead", "19 Aug", "Aug Lead", "16 Sep", "Sep Lead", "13 Oct", "Oct Lead", "10 Nov", "20 Nov", "Nov Lead", "14 Dec", "Dec Lead", "Jan Lead"]; 
+          customHeaders.batchTable = [...customHeaders.batchTable, ...columns, "TOTAL"]; 
+        }
+        
         batchTableHead.innerHTML = `<th class="name-cell editable-header" contenteditable onblur="updateBatchTableHeader(0, this.innerText)">${customHeaders.batchTable[0]}</th>`;
-        for (let i = 1; i < customHeaders.batchTable.length - 1; i++) { batchTableHead.innerHTML += `<th class="editable-header" contenteditable onblur="updateBatchTableHeader(${i}, this.innerText)">${customHeaders.batchTable[i]}</th>`; }
+        for (let i = 1; i < customHeaders.batchTable.length - 1; i++) { 
+          batchTableHead.innerHTML += `<th class="editable-header" contenteditable onblur="updateBatchTableHeader(${i}, this.innerText)">${customHeaders.batchTable[i]}</th>`; 
+        }
         batchTableHead.innerHTML += `<th class="total-cell editable-header" contenteditable onblur="updateBatchTableHeader(${customHeaders.batchTable.length - 1}, this.innerText)">${customHeaders.batchTable[customHeaders.batchTable.length - 1]}</th>`;
-        const body = document.getElementById("batchTableBody"); body.innerHTML = "";
+        
+        const body = document.getElementById("batchTableBody"); 
+        body.innerHTML = "";
+        
         monthlyBatchData.forEach((emp, i) => {
-          let total = 0; let row = `<tr><td class="name-cell">${emp.name}</td>`;
+          let total = 0; 
+          let row = `<tr><td class="name-cell">${emp.name}</td>`;
+          
           emp.leads.forEach((val, j) => {
             total += Number(val || 0);
             row += `<td class="editable-cell" contenteditable onblur="updateBatchLead(${i}, ${j}, this.innerText)">${val}</td>`;
           });
-          row += `<td class="total-cell">${total}</td></tr>`; body.innerHTML += row;
+          
+          row += `<td class="total-cell">${total}</td></tr>`; 
+          body.innerHTML += row;
         });
-        batchTableFooter.innerHTML = ""; let totalRow = `<tr><td class="name-cell">TOTAL</td>`; let grandTotal = 0;
+        
+        batchTableFooter.innerHTML = ""; 
+        let totalRow = `<tr><td class="name-cell">TOTAL</td>`; 
+        let grandTotal = 0;
+        
         for (let col = 0; col < 15; col++) {
-          let columnTotal = 0; monthlyBatchData.forEach((emp) => { columnTotal += Number(emp.leads[col] || 0); });
-          grandTotal += columnTotal; totalRow += `<td class="total-cell">${columnTotal}</td>`;
+          let columnTotal = 0; 
+          monthlyBatchData.forEach((emp) => { 
+            columnTotal += Number(emp.leads[col] || 0); 
+          });
+          grandTotal += columnTotal; 
+          totalRow += `<td class="total-cell">${columnTotal}</td>`;
         }
-        totalRow += `<td class="total-cell">${grandTotal}</td></tr>`; batchTableFooter.innerHTML += totalRow;
+        
+        totalRow += `<td class="total-cell">${grandTotal}</td></tr>`; 
+        batchTableFooter.innerHTML += totalRow;
       }
+      
       function renderAll() { 
         renderDaily(); 
         renderSummary(); 
@@ -2284,7 +2589,34 @@ summaryFooter.innerHTML += totalRow;
       }
 
       // --- UPDATE FUNCTIONS ---
-      function updateDaily(emp, m, d, val) { salesData.dailyBookings[emp][m][d] = Number(val) || 0; autoMonthly(); renderDaily(); }
+      function updateDaily(emp, m, d, val) { 
+        // Store the text value directly (can be letters or numbers)
+        const textValue = val.trim();
+        
+        // Ensure the year and month data structures exist
+        if (!salesData.dailyBookingsByYear[currentDailyYear]) {
+          salesData.dailyBookingsByYear[currentDailyYear] = {};
+        }
+        if (!salesData.dailyBookingsByYear[currentDailyYear][emp]) {
+          salesData.dailyBookingsByYear[currentDailyYear][emp] = {};
+        }
+        if (!salesData.dailyBookingsByYear[currentDailyYear][emp][m]) {
+          salesData.dailyBookingsByYear[currentDailyYear][emp][m] = {};
+        }
+        
+        // Update the value as text
+        salesData.dailyBookingsByYear[currentDailyYear][emp][m][d] = textValue;
+        
+        // Also update the reference for immediate UI update
+        if (!salesData.dailyBookings[emp]) salesData.dailyBookings[emp] = {};
+        if (!salesData.dailyBookings[emp][m]) salesData.dailyBookings[emp][m] = {};
+        salesData.dailyBookings[emp][m][d] = textValue;
+        
+        // CHANGED: REMOVED autoMonthly() call. 
+        // Filling info in 1st carousel will NOT auto-fetch/update 3rd carousel.
+        
+        renderDaily(); 
+      }
       
       // This function connects the 2nd and 3rd carousels in real-time for the currently selected batch.
       function sUpdate(emp, k, v) {
@@ -2297,7 +2629,7 @@ summaryFooter.innerHTML += totalRow;
         
         if (batchMapping) {
           // Calculate the total leads for the corresponding month based on the new logic
-          calculateMonthlyLeads(emp, batchMapping.monthIndex);
+          calculateMonthlyLeads(emp, batchMapping.monthIndex, batchMapping.year);
         }
         
         renderSummary();
@@ -2305,8 +2637,8 @@ summaryFooter.innerHTML += totalRow;
       }
       
       // New function to calculate monthly leads based on the specific rules
-      function calculateMonthlyLeads(emp, monthIndex) {
-        const summary = salesData.leadSummary[emp][monthIndex];
+      function calculateMonthlyLeads(emp, monthIndex, year) {
+        const summary = salesData.leadSummary[emp][currentSummaryMonth];
         let totalLeads = 0;
         
         // Apply the specific calculation rules
@@ -2328,28 +2660,102 @@ summaryFooter.innerHTML += totalRow;
           totalLeads += Math.floor(summary.app / 2) * 1; // 1 lead per 2 family members
         }
         
+        // Initialize monthly leads data for the year if it doesn't exist
+        if (!salesData.monthlyLeadsByYear[year]) {
+          salesData.monthlyLeadsByYear[year] = {};
+          salesData.employees.forEach(e => {
+            salesData.monthlyLeadsByYear[year][e] = Array(12).fill(0);
+          });
+        }
+        
         // Update the monthly leads for the employee
-        salesData.monthlyLeads[emp][monthIndex] = totalLeads;
+        salesData.monthlyLeadsByYear[year][emp][monthIndex] = totalLeads;
       }
       
-      function updateMonthly(emp, monthIndex, val) { salesData.monthlyLeads[emp][monthIndex] = Number(val) || 0; renderMonthly(); }
-      function updateBatch(emp, id, v) { batchData.batchLeads[emp][id] = Number(v) || 0; renderBatch(); }
-      function updateTHC(id, v) { batchData.thc[id] = Number(v) || 0; renderBatch(); }
-      function updateBatchLead(empIndex, leadIndex, value) { monthlyBatchData[empIndex].leads[leadIndex] = Number(value) || 0; renderBatchTable(); }
-      function updateDailyHeader(index, value) { customHeaders.daily[index] = value; }
-      function updateSummaryHeader(index, value) { customHeaders.summary[index] = value; }
-      function updateMonthlyHeader(index, value) { customHeaders.monthly[index] = value; }
-      function updateBatchHeader(index, value) { customHeaders.batch[index] = value; }
-      function updateBatchTableHeader(index, value) { customHeaders.batchTable[index] = value; }
+      function updateMonthly(emp, monthIndex, val) { 
+        // Ensure the year data structure exists
+        if (!salesData.monthlyLeadsByYear[currentMonthlyYear]) {
+          salesData.monthlyLeadsByYear[currentMonthlyYear] = {};
+        }
+        if (!salesData.monthlyLeadsByYear[currentMonthlyYear][emp]) {
+          salesData.monthlyLeadsByYear[currentMonthlyYear][emp] = Array(12).fill(0);
+        }
+        
+        // Update the value in the year-specific data
+        salesData.monthlyLeadsByYear[currentMonthlyYear][emp][monthIndex] = Number(val) || 0;
+        
+        // Also update the reference for immediate UI update
+        salesData.monthlyLeads[emp][monthIndex] = Number(val) || 0;
+        
+        renderMonthly(); 
+      }
+      
+      function updateBatch(emp, id, v) { 
+        batchData.batchLeads[emp][id] = Number(v) || 0; 
+        renderBatch(); 
+      }
+      
+      function updateTHC(id, v) { 
+        batchData.thc[id] = Number(v) || 0; 
+        renderBatch(); 
+      }
+      
+      function updateBatchLead(empIndex, leadIndex, value) { 
+        monthlyBatchData[empIndex].leads[leadIndex] = Number(value) || 0; 
+        renderBatchTable(); 
+      }
+      
+      function updateDailyHeader(index, value) { 
+        customHeaders.daily[index] = value; 
+      }
+      
+      function updateSummaryHeader(index, value) { 
+        customHeaders.summary[index] = value; 
+      }
+      
+      function updateMonthlyHeader(index, value) { 
+        customHeaders.monthly[index] = value; 
+      }
+      
+      function updateBatchHeader(index, value) { 
+        customHeaders.batch[index] = value; 
+      }
+      
+      function updateBatchTableHeader(index, value) { 
+        customHeaders.batchTable[index] = value; 
+      }
+      
+      // DISABLED: This function previously auto-calculated 3rd carousel from 1st.
+      // Per user request, this logic is removed so 1st carousel is independent.
+      /*
       function autoMonthly() {
         salesData.employees.forEach((emp) => {
           for (let m = 0; m < 12; m++) {
-            let sum = 0; if (salesData.dailyBookings[emp][m]) Object.values(salesData.dailyBookings[emp][m]).forEach((v) => (sum += Number(v || 0)));
+            let sum = 0; 
+            if (salesData.dailyBookings[emp][m]) {
+              Object.values(salesData.dailyBookings[emp][m]).forEach((v) => {
+                // Extract numeric value from text (for letters like "1A", extract "1")
+                const numericValue = Number(v.toString().replace(/[^0-9]/g, '')) || 0;
+                sum += numericValue;
+              });
+            }
+            
+            // Update in the current year's data
+            if (!salesData.monthlyLeadsByYear[currentDailyYear]) {
+              salesData.monthlyLeadsByYear[currentDailyYear] = {};
+            }
+            if (!salesData.monthlyLeadsByYear[currentDailyYear][emp]) {
+              salesData.monthlyLeadsByYear[currentDailyYear][emp] = Array(12).fill(0);
+            }
+            salesData.monthlyLeadsByYear[currentDailyYear][emp][m] = sum;
+            
+            // Also update the reference for immediate UI update
             salesData.monthlyLeads[emp][m] = sum;
           }
         });
         renderMonthly();
       }
+      */
 
       // --- BATCH CALCULATION FUNCTION (CONNECTS 2ND AND 3RD CAROUSELS) ---
       function calculateBatch() {
@@ -2362,13 +2768,14 @@ summaryFooter.innerHTML += totalRow;
         }
         
         let targetMonth = -1;
+        let targetYear = currentYear;
         let batchName = "";
         
-        // Map batch to month
+        // Map batch to month and year
         switch(selectedBatch) {
-          case "8march": targetMonth = 2; batchName = "8 March Batch"; break;
-          case "6april": targetMonth = 2; batchName = "6 April Batch"; break;
-          case "18may": targetMonth = 6; batchName = "18 May Batch"; break;
+          case "8march": targetMonth = 2; targetYear = "2026"; batchName = "8 March Batch"; break;
+          case "6april": targetMonth = 3; targetYear = "2026"; batchName = "6 April Batch"; break;
+          case "18may": targetMonth = 6; targetYear = "2026"; batchName = "18 May Batch"; break;
           default: showNotification("Invalid batch selection", "error"); return;
         }
         
@@ -2408,13 +2815,15 @@ summaryFooter.innerHTML += totalRow;
         
         // Automatically switch the 3rd carousel's view to the calculated month
         document.getElementById('monthlyMonthSelect').value = targetMonth;
+        document.getElementById('monthlyYearSelect').value = targetYear;
         currentMonthlyMonth = targetMonth;
+        currentMonthlyYear = targetYear;
         
         // Re-render the 3rd carousel table to show the updated values and highlight the correct column
         renderMonthly();
         
         const monthName = customHeaders.monthly[targetMonth + 1];
-        showNotification(`${batchName} calculated using data from ${monthName} and added to the 3rd carousel.`, "success");
+        showNotification(`${batchName} calculated using data from ${monthName} ${targetYear} and added to the 3rd carousel.`, "success");
       }
 
       // --- UTILITY FUNCTIONS ---
